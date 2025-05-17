@@ -25,7 +25,7 @@ const App = () => {
              };
 
              // Initialize SocketIO
-             socketRef.current = io('https://genderdetection.onrender.com, {
+             socketRef.current = io('https://5000-01jvevdd68qh21f5w9789g8977.cloudspaces.litng.ai, {
                  transports: ['websocket'],
                  reconnection: true,
                  reconnectionAttempts: Infinity,
