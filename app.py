@@ -12,25 +12,30 @@ import base64
 import pymongo
 from pymongo.errors import ConnectionFailure, PyMongoError
 import certifi
+import sys
+import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Suppress PyMongo logs (set to WARNING or higher)
+logging.getLogger('pymongo').setLevel(logging.WARNING)
+
 app = Flask(__name__)
 # CORS for Vercel frontend
 CORS(app, resources={r"/*": {"origins": ["https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"]}})
 socketio = SocketIO(app, cors_allowed_origins=["https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"],
-                    ping_timeout=60, ping_interval=20, engineio_logger=True)
+                    ping_timeout=120, ping_interval=30, engineio_logger=True)
 
 # Initialize MongoDB client with increased timeouts
 try:
     mongo_client = pymongo.MongoClient(
         "mongodb+srv://syedwalishajeehrizvi:TAD110@cluster0.xsihefe.mongodb.net/?retryWrites=true&w=majority&tls=true",
-        serverSelectionTimeoutMS=30000,  # Increased from 5000
-        connectTimeoutMS=30000,          # Added
-        socketTimeoutMS=30000,           # Added
-        maxPoolSize=50,                  # Added
+        serverSelectionTimeoutMS=30000,
+        connectTimeoutMS=30000,
+        socketTimeoutMS=30000,
+        maxPoolSize=50,
         tls=True,
         tlsCAFile=certifi.where()
     )
@@ -99,11 +104,12 @@ def handle_image(data):
 
         # Person detection
         try:
-            results = yolo_model(frame, classes=[0], conf=0.3)
+            logger.debug("Starting YOLO detection")
+            results = yolo_model(frame, classes=[0], conf=0.2)
             confidences = results[0].boxes.conf.cpu().numpy() if len(results[0].boxes) > 0 else []
             logger.debug("YOLO detection completed, boxes: %d, confidences: %s", len(results[0].boxes), str(confidences))
         except Exception as e:
-            logger.error(f"YOLO detection failed: {e}")
+            logger.error(f"YOLO detection failed: {e}\n{traceback.format_exc()}")
             emit('result', {'message': 'Error: Detection failed'})
             return
 
@@ -112,8 +118,9 @@ def handle_image(data):
         for result in results:
             try:
                 boxes = result.boxes.xyxy.cpu().numpy()
+                logger.debug("Processing YOLO boxes, count: %d", len(boxes))
             except Exception as e:
-                logger.error(f"Failed to process YOLO boxes: {e}")
+                logger.error(f"Failed to process YOLO boxes: {e}\n{traceback.format_exc()}")
                 continue
             if len(boxes) > 0:
                 box = boxes[0]
@@ -130,6 +137,7 @@ def handle_image(data):
 
                 # Gender classification
                 try:
+                    logger.debug("Starting gender classification")
                     person_img_rgb = cv2.cvtColor(person_img, cv2.COLOR_BGR2RGB)
                     inputs = feature_extractor(images=person_img_rgb, return_tensors="pt")
                     with torch.no_grad():
@@ -137,9 +145,9 @@ def handle_image(data):
                         predicted_idx = logits.argmax(-1).item()
                         label = gender_model.config.id2label[predicted_idx]
                     person_detected = True
-                    logger.debug("Gender classification: %s", label)
+                    logger.debug("Gender classification completed: %s", label)
                 except Exception as e:
-                    logger.error(f"Gender classification failed: {e}")
+                    logger.error(f"Gender classification failed: {e}\n{traceback.format_exc()}")
                     continue
 
                 # Store in MongoDB
@@ -149,24 +157,27 @@ def handle_image(data):
                     "bbox": {"x1": x1, "y1": y1, "x2": x2, "y2": y2}
                 }
                 try:
+                    logger.debug("Saving detection to MongoDB")
                     collection.insert_one(detection)
                     logger.info(f"Detection saved to MongoDB: {detection}")
                 except PyMongoError as e:
                     logger.error(f"Failed to save detection to MongoDB: {e}")
+                    # Continue to emit result even if MongoDB fails
 
                 break
 
         # Send result
         try:
             result_text = f"Person is {label}" if person_detected else label
+            logger.debug("Sending result: %s", result_text)
             emit('result', {'message': result_text})
-            logger.debug("Result sent: %s", result_text)
+            logger.info("Result sent successfully")
         except Exception as e:
-            logger.error(f"Failed to send result: {e}")
+            logger.error(f"Failed to send result: {e}\n{traceback.format_exc()}")
             emit('result', {'message': 'Error: Failed to send result'})
 
     except Exception as e:
-        logger.error(f"Error processing image: {e}")
+        logger.error(f"Error processing image: {e}\n{traceback.format_exc()}")
         emit('result', {'message': 'Error: Server error'})
 
 @app.route('/status', methods=['GET'])
