@@ -18,16 +18,19 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# CORS for local testing and Vercel frontend (replace with actual Vercel URL after deployment)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "http://127.0.0.1:8000", "https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"]}})
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:8000", "http://127.0.0.1:8000", "https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"],
+# CORS for Vercel frontend
+CORS(app, resources={r"/*": {"origins": ["https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"]}})
+socketio = SocketIO(app, cors_allowed_origins=["https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"],
                     ping_timeout=60, ping_interval=20, engineio_logger=True)
 
-# Initialize MongoDB client
+# Initialize MongoDB client with increased timeouts
 try:
     mongo_client = pymongo.MongoClient(
         "mongodb+srv://syedwalishajeehrizvi:TAD110@cluster0.xsihefe.mongodb.net/?retryWrites=true&w=majority&tls=true",
-        serverSelectionTimeoutMS=5000,
+        serverSelectionTimeoutMS=30000,  # Increased from 5000
+        connectTimeoutMS=30000,          # Added
+        socketTimeoutMS=30000,           # Added
+        maxPoolSize=50,                  # Added
         tls=True,
         tlsCAFile=certifi.where()
     )
