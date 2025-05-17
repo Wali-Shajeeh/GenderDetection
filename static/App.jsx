@@ -25,7 +25,7 @@ const App = () => {
              };
 
              // Initialize SocketIO
-             socketRef.current = io('https://5000-01jvevdd68qh21f5w9789g8977.cloudspaces.litng.ai, {
+             socketRef.current = io('genderclassification-f6fqdph7aee4fubz.eastasia-01.azurewebsites.net, {
                  transports: ['websocket'],
                  reconnection: true,
                  reconnectionAttempts: Infinity,
