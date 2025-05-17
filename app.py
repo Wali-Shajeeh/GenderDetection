@@ -24,8 +24,8 @@ logging.getLogger('pymongo').setLevel(logging.WARNING)
 
 app = Flask(__name__)
 # CORS for Vercel frontend
-CORS(app, resources={r"/*": {"origins": ["https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"]}})
-socketio = SocketIO(app, cors_allowed_origins=["https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"],
+CORS(app, resources={r"/*": {"origins": ["https://distributed-computing-22yutz8al-wali-shajeehs-projects.vercel.app/", "*"]}})
+socketio = SocketIO(app, cors_allowed_origins=["https://distributed-computing-22yutz8al-wali-shajeehs-projects.vercel.app/", "*"],
                     ping_timeout=120, ping_interval=30, engineio_logger=True)
 
 # Initialize MongoDB client with increased timeouts
