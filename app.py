@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 # CORS for local testing and Vercel frontend (replace with actual Vercel URL after deployment)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "http://127.0.0.1:8000", "https://your-frontend.vercel.app", "*"]}})
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:8000", "http://127.0.0.1:8000", "https://your-frontend.vercel.app", "*"],
+CORS(app, resources={r"/*": {"origins": ["http://localhost:8000", "http://127.0.0.1:8000", "https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"]}})
+socketio = SocketIO(app, cors_allowed_origins=["http://localhost:8000", "http://127.0.0.1:8000", "https://distributed-computing-m7vd4glxj-wali-shajeehs-projects.vercel.app", "*"],
                     ping_timeout=60, ping_interval=20, engineio_logger=True)
 
 # Initialize MongoDB client
